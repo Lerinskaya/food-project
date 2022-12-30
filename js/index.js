@@ -1,4 +1,5 @@
 window.addEventListener('DOMContentLoaded', () => {
+    //Tabs
 
     const tabs = document.querySelectorAll('.tabheader__item'),
         tabsContent = document.querySelectorAll('.tabcontent'),
@@ -34,7 +35,10 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const deadline = '2022-12-25';
+
+    //Timer
+
+    const deadline = '2023-03-25';
 
     function getTimeRemaining(endtime) {
         const t = Date.parse(endtime) - Date.parse(new Date()),
@@ -90,6 +94,8 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimer('.timer', deadline)
 
 
+    //Modal
+
     const btnModal = document.querySelectorAll('[data-modal]');
     const modal = document.querySelector('.modal');
 
@@ -129,6 +135,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('scroll', showModalInTHeEnd);
+
+    //Cards
 
     class Card {
         constructor(src, alt, title, descr, price, parentSelector, ...classes) {
@@ -257,6 +265,7 @@ window.addEventListener('DOMContentLoaded', () => {
     //Slider
 
 const slides = document.querySelectorAll('.offer__slide'),
+slider = document.querySelector('.offer__slider'),
 slidesWrapper = document.querySelector('.offer__slider-wrapper'),
 slidesField = document.querySelector('.offer__slider-inner'),
 width = window.getComputedStyle(slidesWrapper).width,
@@ -274,16 +283,43 @@ if(slides.length>10){
     total.innerHTML = '0'+ slides.length;
 }
 
-if(slideIndex>10){
-    current.innerHTML = slideIndex;
-} else {
-    current.innerHTML = '0'+ slideIndex;
+function currentSlide(){
+    if(slideIndex>10){
+        current.innerHTML = slideIndex;
+        } else {
+        current.innerHTML = '0'+ slideIndex;
+        }
 }
+currentSlide();
 
 slidesField.style.width = 100*slides.length + '%';
 slides.forEach(i=> {
     i.style.width = width;
 });
+
+slider.style.position = 'relative';
+
+const dots = document.createElement('ol'),
+    dotsArr = [];
+dots.classList.add('carousel-indicators');
+
+slider.append(dots);
+
+for(let i = 0; i < slides.length; i++){
+    const dot = document.createElement('li');
+    dot.setAttribute('data-slide-to', i+1);
+    dot.classList.add('dot');
+    if(i==0){
+        dot.style.opacity = 1;
+    }
+    dots.append(dot);
+    dotsArr.push(dot);
+}
+
+function dotStyles() {
+    dotsArr.forEach(dot=>dot.style.opacity='.5');
+    dotsArr[slideIndex-1].style.opacity = 1;
+}
 
 prev.addEventListener('click', ()=>{
     if(offset == 0){
@@ -300,11 +336,8 @@ prev.addEventListener('click', ()=>{
         slideIndex--;
     }
     
-    if(slideIndex>10){
-        current.innerHTML = slideIndex;
-    } else {
-        current.innerHTML = '0'+ slideIndex;
-    }
+    currentSlide();
+    dotStyles();
 });
 next.addEventListener('click', ()=>{
     if(offset == +width.slice(0,width.length-2)*(slides.length-1)){
@@ -321,51 +354,125 @@ next.addEventListener('click', ()=>{
         slideIndex++;
     }
 
-    if(slideIndex>10){
-    current.innerHTML = slideIndex;
-    } else {
-    current.innerHTML = '0'+ slideIndex;
+    currentSlide();
+    dotStyles();
+});
+
+dotsArr.forEach(dot=> {
+    dot.addEventListener('click', (e)=>{
+        const slideTo = e.target.getAttribute('data-slide-to');
+        slideIndex = slideTo;
+
+        offset = +width.slice(0,width.length-2)*(slideTo-1);
+
+        slidesField.style.transform = `translateX(-${offset}px)`;
+
+        currentSlide();
+        dotStyles();
+    })
+})
+
+//Calculator
+const result = document.querySelector('.calculating__result span');
+let sex, height, weight, age, ratio;
+
+if(localStorage.getItem('sex')){
+    sex = localStorage.getItem('sex')
+} else {
+    sex='female';
+    localStorage.setItem('sex', 'female');
+}
+
+if(localStorage.getItem('ratio')){
+    ratio = localStorage.getItem('ratio')
+} else {
+    ratio=1.375;
+    localStorage.setItem('ratio', 1.375);
+}
+
+function initLocalSettings(selector, activeClass){
+    const elems = document.querySelectorAll(selector);
+
+    elems.forEach(el=>{
+        el.classList.remove(activeClass);
+        if(el.getAttribute('id')===localStorage.getItem('sex')){
+            el.classList.add(activeClass);
+        }
+        if(el.getAttribute('data-ratio')===localStorage.getItem('ratio')){
+            el.classList.add(activeClass);
+        }
+    });
+}
+initLocalSettings('#gender div', 'calculating__choose-item_active');
+initLocalSettings('.calculating__choose_big div', 'calculating__choose-item_active');
+
+function calcTotal(){
+    if(!sex || !height||!weight||!age||!ratio){
+        result.textContent = '____';
+        return
     }
+    if(sex === 'female'){
+        result.textContent = Math.round((447.6 + 9.2 * weight + 3.1*height-4.3*age)*ratio)
+    } else {
+        result.textContent = Math.round((88.36 + 13.4 * weight + 4.8*height-5.7*age)*ratio)
+    }
+}
+calcTotal();
+
+function getStaticInfo(selector, activeClass){
+const elements=document.querySelectorAll(selector);
+
+elements.forEach(el=>{
+    el.addEventListener('click', (e)=>{
+        if(e.target.getAttribute('data-ratio')){
+            ratio = +e.target.getAttribute('data-ratio');
+            localStorage.setItem('ratio', +e.target.getAttribute('data-ratio'));
+        } else {
+            sex= e.target.getAttribute('id');
+            localStorage.setItem('sex', e.target.getAttribute('id'))
+        }
+    
+        elements.forEach(el=>{
+            el.classList.remove(activeClass);
+        });
+    
+        e.target.classList.add(activeClass);
+        calcTotal();
+    });
+});
+}
+
+getStaticInfo('#gender div', 'calculating__choose-item_active');
+getStaticInfo('.calculating__choose_big div', 'calculating__choose-item_active');
+
+function getDinamicInfo(selector){
+    const input = document.querySelector(selector);
+
+    input.addEventListener('input', () =>{
+
+        if(input.value.match(/\D/g)){
+            input.style.border = '1px solid red';
+        } else {
+            input.style.border = 'none';
+        }
+
+        switch(input.getAttribute('id')){
+            case 'height':
+                height=+input.value;
+                break;
+            case 'weight':
+                weight=+input.value;
+                break;
+            case 'age':
+                age=+input.value;
+                break;
+        }
+        calcTotal();
+    });
+}
+getDinamicInfo('#height');
+getDinamicInfo('#weight');
+getDinamicInfo('#age');
 });
 
 
-
-// showSlides(slideIndex);
-
-// if(slides.length>10){
-//     total.innerHTML = slides.length;
-// } else {
-//     total.innerHTML = '0'+ slides.length;
-// }
-
-// function showSlides(n){
-//     if(n>slides.length){
-//         slideIndex = 1; 
-//     }
-
-//     if(n<1){
-//         slideIndex = slides.length;
-//     }
-
-//     slides.forEach(item => item.style.display = 'none');
-
-//     slides[slideIndex-1].style.display = 'block';
-
-//     if(slideIndex>10){
-//         current.innerHTML = slideIndex;
-//     } else {
-//         current.innerHTML = '0'+ slideIndex;
-//     }
-// }
-
-// function plusSlide(n){
-//     showSlides(slideIndex+=n);
-// }
-
-// prev.addEventListener('click', ()=>{
-//     plusSlide(-1)
-// });
-// next.addEventListener('click', ()=>{
-//     plusSlide(+1)
-// });
-});
